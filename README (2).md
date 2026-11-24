@@ -1,0 +1,359 @@
+# Awesome Diffusion Acceleration
+
+**English** · [简体中文](README.zh-CN.md)
+
+Papers and implementations for faster diffusion and flow-based generation.
+
+This catalog follows *Understanding Diffusion Acceleration: Methods, Trade-Offs, and Open Questions*. It includes all **185** references in the manuscript. Click a method name to open its paper.
+
+**127** entries link to GitHub code or examples, **6** to official checkpoints, and **7** to project pages. A dash in the resources column indicates that a public resource link has yet to be verified.
+
+[CSV index](papers.csv) · [BibTeX](references.bib)
+
+## Contents
+
+| Category | Entries | Topics |
+| --- | ---: | --- |
+| [Distillation](#distillation) | 64 | [Step and Endpoint Distillation](#step-distillation) · [Consistency Distillation and Applications](#consistency-distillation) · [Reflow and Flow-Map Distillation](#flow-distillation) · [Score, Distribution, and Hybrid Distillation](#distribution-distillation) · [Adversarial Distillation](#adversarial-distillation) · [Causal and Streaming Video Distillation](#causal-video-distillation) |
+| [Consistency and Finite-Time Flow Training](#consistency-and-flow-training) | 20 | [Consistency Objectives and Training Stability](#consistency-objectives) · [Shortcut Models, MeanFlow, and Flow Maps](#flow-maps) |
+| [Numerical Sampling and Parallel Inference](#sampling) | 22 | [ODE Solvers and Transition Approximations](#ode-solvers) · [Timestep Grids and Noise Schedules](#schedules) · [Parallel and Streaming Systems](#parallel-inference) |
+| [Network Design and Per-Step Inference Cost](#network-and-runtime) | 32 | [Efficient Backbones and Linear Attention](#efficient-backbones) · [Sparse Attention](#sparse-attention) · [Caching and Feature Forecasting](#cache-and-forecasting) · [Quantization, Pruning, and Kernels](#compression-and-kernels) |
+| [Foundations, Applications, and Evaluation](#foundations-and-evaluation) | 47 | [Diffusion, Adversarial Learning, and Transport](#foundations) · [Representative Models and Applications](#applications-and-models) · [Benchmarks, Metrics, and Deployment Costs](#metrics-and-benchmarks) · [Related Surveys and Context](#reviews-and-context) |
+
+<a name="distillation"></a>
+
+## 1. Distillation
+
+<a name="step-distillation"></a>
+
+### 1.1 Step and Endpoint Distillation
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 1 | [Progressive Distillation](https://openreview.net/forum?id=TIdIXIpzhoI "Progressive Distillation for Fast Sampling of Diffusion Models") · 2022 | Trains one student update to replace two deterministic teacher updates and repeats the procedure to halve the sampling budget. | — |
+| 3 | [Guided Distillation](https://openaccess.thecvf.com/content/CVPR2023/html/Meng_On_Distillation_of_Guided_Diffusion_Models_CVPR_2023_paper.html "On distillation of guided diffusion models") · 2023 | Folds conditional and unconditional classifier-free guidance predictions into one forward pass, then progressively distills the model to fewer steps. | — |
+| 85 | [SMD](https://arxiv.org/abs/2610.18472 "Simplifying and Improving On-Policy Distillation for Few-Step Diffusion") · 2026 | Trains large student updates on states visited by the student, using teacher velocities sampled within each interval. | [GitHub](https://github.com/zjwfufu/SMD) |
+| 98 | [Direct Distillation](https://arxiv.org/abs/2101.02388 "Knowledge distillation in iterative generative models for improved sampling speed") · 2021 | Trains a one-step student on endpoints produced by full teacher trajectories from the same initial noise. | [GitHub](https://github.com/tcl9876/Denoising_Student) |
+| 100 | [TRACT](https://arxiv.org/abs/2303.04248 "TRACT: Denoising diffusion models with transitive closure time-distillation") · 2023 | Exploits the transitivity of time transitions to distill short intervals first and extend them progressively. | [GitHub](https://github.com/apple-aiml-research/ml-tract) |
+
+<a name="consistency-distillation"></a>
+
+### 1.2 Consistency Distillation and Applications
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 4 | [SCott](https://doi.org/10.1609/aaai.v39i5.32580 "SCott: Accelerating Diffusion Models with Stochastic Consistency Distillation") · 2025 | Builds consistency targets from the teacher's stochastic SDE transitions and adds adversarial supervision. | — |
+| 5 | [Multistep Consistency Models](https://arxiv.org/abs/2403.06807 "Multistep consistency models") · 2024 | Divides the trajectory into segments and learns a consistency map to each segment endpoint. | — |
+| 6 | [PCM](https://proceedings.neurips.cc/paper_files/paper/2024/hash/98a29475083c502c34949f9baa1aa2ef-Abstract-Conference.html "Phased Consistency Models") · 2024 | Distills a flow model segment by segment, aligning local endpoints and optionally applying adversarial alignment after re-noising. | [GitHub](https://github.com/G-U-N/Phased-Consistency-Model) |
+| 7 | [T2V-Turbo](https://proceedings.neurips.cc/paper_files/paper/2024/hash/8a57aa8e8b57e64a42e95f7dceb0adb9-Abstract-Conference.html "T2V-Turbo: Breaking the Quality Bottleneck of Video Consistency Model with Mixed Reward Feedback") · 2024 | Uses multiple reward signals in video consistency distillation to improve both visual quality and text alignment at low step counts. | [GitHub](https://github.com/Ji4chenLi/t2v-turbo) |
+| 8 | [T2V-Turbo-v2](https://arxiv.org/abs/2410.05677 "T2V-Turbo-v2: Enhancing Video Generation Model Post-Training through Data, Reward, and Conditional Guidance Design") · 2024 | Combines data selection, reward design, and conditional guidance in few-step video post-training. | [GitHub](https://github.com/Ji4chenLi/t2v-turbo) |
+| 9 | [VideoLCM](https://arxiv.org/abs/2312.09109 "VideoLCM: Video latent consistency model") · 2023 | Distills a video latent diffusion model into a few-step latent consistency model. | — |
+| 10 | [AnimateLCM](https://doi.org/10.1145/3681758.3698013 "AnimateLCM: Computation-Efficient Personalized Style Video Generation without Personalized Video Data") · 2024 | Separates consistency learning for image priors and temporal modules to support personalized few-step video generation. | [GitHub](https://github.com/G-U-N/AnimateLCM) |
+| 51 | [PixArt-δ](https://arxiv.org/abs/2401.05252 "PixArt-δ: Fast and Controllable Image Generation with Latent Consistency Models") · 2024 | Applies latent consistency distillation to PixArt for fast, controllable image generation. | [Official weights](https://huggingface.co/PixArt-alpha/PixArt-LCM-XL-2-1024-MS) |
+| 78 | [CTM](https://proceedings.iclr.cc/paper_files/paper/2024/hash/c204d12afa0175285e5aac65188808b4-Abstract-Conference.html "Consistency Trajectory Models: Learning Probability Flow ODE Trajectory of Diffusion") · 2024 | Distills probability-flow ODE transitions between arbitrary time pairs while retaining local denoising. | [GitHub](https://github.com/sony/ctm) |
+| 79 | [Hyper-SD](https://proceedings.neurips.cc/paper_files/paper/2024/hash/d4e1c24ac41ff0b82ca1b171731f0b23-Abstract-Conference.html "Hyper-SD: Trajectory Segmented Consistency Model for Efficient Image Synthesis") · 2024 | Combines trajectory-segmented consistency, feedback supervision, and distribution matching for one- and few-step synthesis. | [Official weights](https://huggingface.co/ByteDance/Hyper-SD) |
+| 80 | [CMT](https://proceedings.iclr.cc/paper_files/paper/2026/hash/fb44a668c2d4bc984e9d6ca261262cbb-Abstract-Conference.html "CMT: Mid-Training for Efficient Learning of Consistency, Mean Flow, and Flow-Map Models") · 2026 | Uses endpoints from teacher trajectories for mid-training before learning consistency, mean-flow, or flow-map objectives. | [GitHub](https://github.com/sony/cmt) |
+| 102 | [LCM](https://arxiv.org/abs/2310.04378 "Latent consistency models: Synthesizing high-resolution images with few-step inference") · 2023 | Learns a consistency map to a clean latent endpoint to reduce the number of text-to-image denoiser evaluations. | [GitHub](https://github.com/luosiallen/latent-consistency-model) |
+| 104 | [LCM-LoRA](https://arxiv.org/abs/2311.05556 "LCM-LoRA: A universal stable-diffusion acceleration module") · 2023 | Packages latent consistency distillation in a reusable low-rank adapter. | [Official weights](https://huggingface.co/latent-consistency/lcm-lora-sdxl) |
+| 105 | [TLCM](https://arxiv.org/abs/2406.05768 "TLCM: Training-efficient Latent Consistency Model for Image Generation with 2-8 Steps") · 2024 | Trains a latent consistency model for two- to eight-step image sampling with reduced training cost. | [GitHub](https://github.com/oppo-mente-lab/tlcm) |
+| 106 | [SFD](https://proceedings.nips.cc/paper_files/paper/2024/hash/47ee3941a6f1d23c39b788e0f450e2a7-Abstract-Conference.html "Simple and Fast Distillation of Diffusion Models") · 2024 | Simplifies consistency fine-tuning across multiple timesteps and supports different evaluation budgets with one distilled model. | [GitHub](https://github.com/zju-pi/diff-sampler) |
+| 108 | [CCM](https://proceedings.mlr.press/v235/xiao24h.html "CCM: Real-Time Controllable Visual Content Creation Using Text-to-Image Consistency Models") · 2024 | Adds spatial conditioning to a few-step text-to-image consistency model. | — |
+| 109 | [AnimateDiff-Lightning](https://arxiv.org/abs/2403.12706 "AnimateDiff-Lightning: Cross-model diffusion distillation") · 2024 | Uses cross-model distillation to reduce the number of steps required by an AnimateDiff-style model. | [Official weights](https://huggingface.co/ByteDance/AnimateDiff-Lightning) |
+| 179 | [SwiftVideo](https://arxiv.org/abs/2508.06082 "SwiftVideo: A Unified Framework for Few-Step Video Generation Through Trajectory-Distribution Alignment") · 2026 | Follows continuous-time consistency distillation with a frozen DINOv2-based discriminator and cross-step trajectory supervision. | — |
+
+<a name="flow-distillation"></a>
+
+### 1.3 Reflow and Flow-Map Distillation
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 15 | [Rectified Flow](https://openreview.net/forum?id=XVjTT1nw5z "Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow") · 2023 | Uses reflow to re-pair noise and data endpoints, making the learned transport easier to integrate with large steps. | [GitHub](https://github.com/gnobitab/RectifiedFlow) |
+| 16 | [InstaFlow](https://proceedings.iclr.cc/paper_files/paper/2024/file/4dc37a7bc61057252ce043fa3b83aac2-Paper-Conference.pdf "InstaFlow: One step is enough for high-quality diffusion-based text-to-image generation") · 2024 | Applies reflow and endpoint distillation to a pretrained text-to-image model to obtain a one-step student. | [GitHub](https://github.com/gnobitab/InstaFlow) |
+| 17 | [CFM](https://arxiv.org/abs/2407.02398 "Consistency flow matching: Defining straight flows with velocity consistency") · 2024 | Enforces consistency in both local velocities and predicted endpoints for few-step flow generation. | [GitHub](https://github.com/YangLing0818/consistency_flow_matching) |
+| 81 | [SlimFlow](https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/10822.pdf "SlimFlow: Training smaller one-step diffusion models with rectified flow") · 2025 | Uses annealed reflow and distillation to reduce both the student model size and the number of sampling steps. | [GitHub](https://github.com/yuanzhi-zhu/SlimFlow) |
+| 82 | [PeRFlow](https://proceedings.neurips.cc/paper_files/paper/2024/file/8f9d1362a386e80a723e98451a8c7564-Paper-Conference.pdf "PeRFlow: Piecewise Rectified Flow as Universal Plug-and-Play Accelerator") · 2024 | Fits teacher transitions separately within time intervals so that each segment can be sampled with larger updates. | [GitHub](https://github.com/magic-research/piecewise-rectified-flow) |
+| 83 | [FreeFlow](https://openaccess.thecvf.com/content/CVPR2026/papers/Tong_Flow_Map_Distillation_Without_Data_CVPR_2026_paper.pdf "Flow Map Distillation Without Data") · 2026 | Learns a flow map without training data by querying a pretrained teacher on student-generated samples. | [GitHub](https://github.com/ShangyuanTong/FreeFlow) |
+| 84 | [MeanFlow + RAE](https://openaccess.thecvf.com/content/CVPR2026/html/Hu_MeanFlow_Transformers_with_Representation_Autoencoders_CVPR_2026_paper.html "MeanFlow Transformers with Representation Autoencoders") · 2026 | Learns mean flows in a representation autoencoder's latent space for few-step high-resolution generation. | [GitHub](https://github.com/sony/mf-rae) |
+| 176 | [AnyFlow](https://arxiv.org/abs/2605.13724 "AnyFlow: Any-Step Video Diffusion Model with On-Policy Flow Map Distillation") · 2026 | Distills finite-interval flow maps on student-sampled trajectories and supports different sampling budgets. | [GitHub](https://github.com/NVlabs/AnyFlow) |
+| 177 | [Rectified Diffusion](https://openreview.net/forum?id=nEDToD1R8M "Rectified Diffusion: Straightness Is Not Your Need in Rectified Flow") · 2025 | Retrains on teacher-generated noise–sample pairs to improve first-order updates under the chosen parameterization. | [GitHub](https://github.com/G-U-N/Rectified-Diffusion) |
+
+<a name="distribution-distillation"></a>
+
+### 1.4 Score, Distribution, and Hybrid Distillation
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 2 | [OSV](https://openaccess.thecvf.com/content/CVPR2025/html/Mao_OSV_One_Step_is_Enough_for_High-Quality_Image_to_Video_CVPR_2025_paper.html "OSV: One Step is Enough for High-Quality Image to Video Generation") · 2025 | Distills image-to-video generation to one step and supports further refinement with additional steps. | — |
+| 18 | [SwiftBrush](https://openaccess.thecvf.com/content/CVPR2024/html/Nguyen_SwiftBrush_One-Step_Text-to-Image_Diffusion_Model_with_Variational_Score_Distillation_CVPR_2024_paper.html "SwiftBrush: One-step text-to-image diffusion model with variational score distillation") · 2024 | Uses variational score distillation to turn a text-conditioned diffusion teacher into a one-step generator. | [GitHub](https://github.com/VinAIResearch/SwiftBrush) |
+| 19 | [SiD](https://proceedings.mlr.press/v235/zhou24x.html "Score Identity Distillation: Exponentially Fast Distillation of Pretrained Diffusion Models for One-Step Generation") · 2024 | Uses score identities to define the distillation objective linking the teacher, auxiliary student denoiser, and one-step generator. | [GitHub](https://github.com/mingyuanzhou/SiD) |
+| 20 | [SiDA](https://proceedings.iclr.cc/paper_files/paper/2025/hash/ce953d71deeb33d9ffa2c879b518d273-Abstract-Conference.html "Adversarial Score Identity Distillation: Rapidly Surpassing the Teacher in One Step") · 2025 | Adds an adversarial objective to score identity distillation to improve one-step generation. | [GitHub](https://github.com/mingyuanzhou/SiD) |
+| 72 | [DMD2](https://proceedings.neurips.cc/paper_files/paper/2024/hash/54dcf25318f9de5a7a01f0a4125c541e-Abstract-Conference.html "Improved Distribution Matching Distillation for Fast Image Synthesis") · 2024 | Improves DMD with more frequent auxiliary score updates, adversarial supervision, and training on student rollouts. | [GitHub](https://github.com/tianweiy/DMD2) |
+| 76 | [Diff-Instruct](https://proceedings.neurips.cc/paper_files/paper/2023/file/f115f619b62833aadc5acb058975b0e6-Paper-Conference.pdf "Diff-Instruct: A universal approach for transferring knowledge from pre-trained diffusion models") · 2023 | Compares teacher and generator scores at multiple noise levels to transfer distributional knowledge across generator architectures. | [GitHub](https://github.com/pkulwj1994/diff_instruct) |
+| 86 | [DMD](https://openaccess.thecvf.com/content/CVPR2024/html/Yin_One-step_Diffusion_with_Distribution_Matching_Distillation_CVPR_2024_paper.html "One-step diffusion with distribution matching distillation") · 2024 | Combines a noise-smoothed score difference with paired regression to train a one-step text-to-image student. | [Project page](https://tianweiy.github.io/dmd) |
+| 87 | [eDMD](https://arxiv.org/abs/2611.17194 "eDMD: Endpoint Distribution Matching for Few-Step Diffusion Distillation") · 2026 | Matches the distributions of endpoint predictions produced at each update of a few-step student. | [GitHub](https://github.com/Westlake-AGI-Lab/eDMD) |
+| 88 | [VA-TDM](https://arxiv.org/abs/2611.06796 "VA-TDM: A Unified View for Improving Few-Step Diffusion Models by Velocity Adversarial Distillation") · 2026 | Uses a velocity-form objective to distill distributions at intermediate transitions and endpoints. | [GitHub](https://github.com/Luo-Yihong/VA-TDM) |
+| 90 | [SwiftBrush V2](https://doi.org/10.1007/978-3-031-73007-8_11 "SwiftBrush V2: Make Your One-Step Diffusion Model Better Than Its Teacher") · 2025 | Refines the optimization setup and adds a CLIP alignment objective for one-step text-to-image generation. | [Inference code](https://github.com/VinAIResearch/SwiftBrushV2) |
+| 91 | [SIM](https://proceedings.neurips.cc/paper_files/paper/2024/hash/d107ca794d83c8242e357e6a43a068f4-Abstract-Conference.html "One-Step Diffusion Distillation through Score Implicit Matching") · 2024 | Uses implicit score matching to construct a generator gradient for one-step distribution distillation. | [Inference code](https://github.com/maple-research-lab/SIM) |
+| 92 | [VarFlow](https://proceedings.neurips.cc/paper_files/paper/2025/hash/4f87cfc5e7a73c8876b379984a24a23d-Abstract-Conference.html "VarFlow: Proper Scoring-Rule Diffusion Distillation via Energy Matching") · 2025 | Matches the target distribution with an energy score that balances attraction to target samples and repulsion between student samples. | — |
+| 113 | [TSD-SR](https://openaccess.thecvf.com/content/CVPR2025/html/Dong_TSD-SR_One-Step_Diffusion_with_Target_Score_Distillation_for_Real-World_Image_CVPR_2025_paper.html "TSD-SR: One-Step Diffusion with Target Score Distillation for Real-World Image Super-Resolution") · 2025 | Uses target score distillation to train a one-step model for real-world image super-resolution. | — |
+| 114 | [MSD](https://research.nvidia.com/publication/2025-03_multi-student-diffusion-distillation-better-one-step-generators "Multi-student Diffusion Distillation for Better One-step Generators") · 2025 | Assigns different subsets of the conditioning distribution to different students to improve one-step generation. | — |
+| 115 | [Moment Matching Distillation](https://proceedings.neurips.cc/paper_files/paper/2024/file/3f66d5cdbe032bb750f2dc523357b7a5-Paper-Conference.pdf "Multistep Distillation of Diffusion Models via Moment Matching") · 2024 | Compresses multiple diffusion updates by matching moments of conditional transitions. | — |
+| 180 | [DP-DMD](https://proceedings.mlr.press/v306/wu26ag.html "Diversity-Preserved Distribution Matching Distillation for Fast Visual Synthesis") · 2026 | Uses teacher prediction supervision in the first step to preserve seed diversity and DMD in later steps to improve appearance. | [GitHub](https://github.com/Multimedia-Analytics-Laboratory/dpdmd) |
+| 181 | [Drifting Models](https://arxiv.org/abs/2602.04770 "Generative Modeling via Drifting") · 2026 | Trains a one-step generator using drift fields that attract samples toward the target and repel them from the current generated distribution. | [GitHub](https://github.com/lambertae/drifting) |
+| 182 | [Unified View of Drifting](https://arxiv.org/abs/2603.07514 "A Unified View of Drifting and Score-Based Models") · 2026 | Relates drift fields to the score difference between smoothed densities and compares the corresponding training objectives. | — |
+| 183 | [Multi-Bandwidth DMD](https://arxiv.org/abs/2610.10989 "Multi-Bandwidth Distribution Matching Distillation: On the Equivalence of Distribution Matching Distillation and Drifting Models") · 2026 | Studies the equivalence between DMD and drifting objectives under different smoothing bandwidths. | — |
+
+<a name="adversarial-distillation"></a>
+
+### 1.5 Adversarial Distillation
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 11 | [AddSR](https://doi.org/10.1016/j.patcog.2025.113012 "AddSR: Accelerating diffusion-based blind super-resolution with adversarial diffusion distillation") · 2026 | Uses adversarial distillation for few-step blind super-resolution, aiming to recover detail across image degradations. | [GitHub](https://github.com/NJU-PCALab/AddSR) |
+| 12 | [SDXL-Lightning](https://arxiv.org/abs/2402.13929 "SDXL-Lightning: Progressive adversarial diffusion distillation") · 2024 | Uses progressive adversarial distillation to train SDXL variants for different sampling budgets. | [Official weights](https://huggingface.co/ByteDance/SDXL-Lightning) |
+| 13 | [ADD / SDXL-Turbo](https://doi.org/10.1007/978-3-031-73016-0_6 "Adversarial diffusion distillation") · 2025 | Combines score supervision from a pretrained diffusion model with an adversarial data loss for extreme few-step synthesis. | [Official weights](https://huggingface.co/stabilityai/sdxl-turbo) |
+| 14 | [LADD](https://doi.org/10.1145/3680528.3687625 "Fast high-resolution image synthesis with latent adversarial diffusion distillation") · 2024 | Moves adversarial distillation into the diffusion latent space to reduce the cost of high-resolution post-training. | — |
+| 96 | [NitroFusion](https://openaccess.thecvf.com/content/CVPR2025/papers/Chen_NitroFusion_High-Fidelity_Single-Step_Diffusion_through_Dynamic_Adversarial_Training_CVPR_2025_paper.pdf "NitroFusion: High-Fidelity Single-Step Diffusion through Dynamic Adversarial Training") · 2025 | Dynamically selects discriminators at different noise levels to supervise a one-step student. | [GitHub](https://github.com/ChenDarYen/NitroFusion) |
+| 97 | [APT](https://proceedings.mlr.press/v267/lin25m.html "Diffusion Adversarial Post-Training for One-Step Video Generation") · 2025 | Uses adversarial post-training to convert a pretrained video diffusion model into a one-step generator. | [Project page](https://seaweed-apt.com) |
+
+<a name="causal-video-distillation"></a>
+
+### 1.6 Causal and Streaming Video Distillation
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 89 | [CausVid](https://openaccess.thecvf.com/content/CVPR2025/papers/Yin_From_Slow_Bidirectional_to_Fast_Autoregressive_Video_Diffusion_Models_CVPR_2025_paper.pdf "From Slow Bidirectional to Fast Autoregressive Video Diffusion Models") · 2025 | Distills a bidirectional video diffusion teacher into a causal few-step student that generates video in chunks. | [GitHub](https://github.com/tianweiy/CausVid) |
+| 93 | [Self Forcing](https://proceedings.neurips.cc/paper_files/paper/2025/hash/f4823f831af67a3ef15e41a85434422a-Abstract-Conference.html "Self Forcing: Bridging the Train-Test Gap in Autoregressive Video Diffusion") · 2025 | Rolls out a causal student on its own generated history and matches the distribution of its outputs. | [GitHub](https://github.com/guandeh17/Self-Forcing) |
+| 94 | [LongLive](https://proceedings.iclr.cc/paper_files/paper/2026/hash/91a1610c6ed9e02d33f826b46f472b92-Abstract-Conference.html "LongLive: Real-time Interactive Long Video Generation") · 2026 | Combines long-horizon autoregressive training, bounded KV caches, and frame sinks for interactive long video generation. | [GitHub](https://github.com/NVlabs/LongLive) |
+| 95 | [Salt](https://xingtongge.github.io/Salt/ "Salt: Self-Consistent Distribution Matching with Cache-Aware Training for Fast Video Generation") · 2026 | Combines self-consistency on student rollouts, distribution matching, and cache-aware few-step training. | [GitHub](https://github.com/XingtongGe/Salt) |
+| 175 | [SolarWM](https://arxiv.org/abs/2609.02886 "SolarWM: Open Data and Scalable Training for Long-Horizon Video World Models") · 2026 | Scales long-horizon world model training with open video data and follows teacher-forced AnyFlow initialization with DMD. | [GitHub](https://github.com/Junchao-cs/SolarWM) |
+| 184 | [DuoMatching](https://arxiv.org/abs/2610.03543 "DuoMatching: Joint-Marginal Distribution Matching for Few-Step Video Generation") · 2026 | Matches the video joint distribution and frame marginals using separate auxiliary scores for video and images. | [GitHub](https://github.com/JohnZhan2023/DuoMatching) |
+| 185 | [LynnReal-Hand](https://arxiv.org/abs/2611.21479 "LynnReal-Hand: Unlocking World Interaction with Hand Control") · 2026 | Combines a hand- and camera-conditioned video branch with spatially masked image distillation to balance control and visual quality. | [Inference code](https://github.com/LynnReal-AI/LynnReal) |
+
+<a name="consistency-and-flow-training"></a>
+
+## 2. Consistency and Finite-Time Flow Training
+
+<a name="consistency-objectives"></a>
+
+### 2.1 Consistency Objectives and Training Stability
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 21 | [Consistency Models](https://proceedings.mlr.press/v202/song23a.html "Consistency Models") · 2023 | Maps states on the same probability-flow trajectory to a common endpoint through either teacher distillation or direct training. | [GitHub](https://github.com/openai/consistency_models) |
+| 22 | [TCM](https://proceedings.iclr.cc/paper_files/paper/2025/hash/16049e0c3f47899091ac46f8b3afb178-Abstract-Conference.html "Truncated Consistency Models") · 2025 | Trains consistency over a truncated time interval and retains a pretrained denoiser for the lower-noise portion. | [GitHub](https://github.com/NVlabs/TCM) |
+| 23 | [ECT](https://proceedings.iclr.cc/paper_files/paper/2025/hash/bb166dd4de5dba363bf1023eb956a826-Abstract-Conference.html "Consistency Models Made Easy") · 2025 | Initializes from a pretrained diffusion model and progressively narrows the gap between paired timesteps. | [GitHub](https://github.com/locuslab/ect) |
+| 71 | [iCT](https://proceedings.iclr.cc/paper_files/paper/2024/hash/41bd71e7bf7f9fe68f1c936940fd06bd-Abstract-Conference.html "Improved Techniques for Training Consistency Models") · 2024 | Improves consistency training with a discretization curriculum, noise-level sampling, and a pseudo-Huber loss. | — |
+| 101 | [Consistency Convergence](https://proceedings.mlr.press/v235/lyu24b.html "Sampling is as Easy as Keeping the Consistency: Convergence Guarantee for Consistency Models") · 2024 | Analyzes how consistency objectives and training errors affect convergence in few-step sampling. | — |
+| 107 | [LCSC](https://arxiv.org/abs/2404.02241 "Linear Combination of Saved Checkpoints Makes Consistency and Diffusion Models Better") · 2024 | Improves diffusion and consistency models by linearly combining saved training checkpoints. | [GitHub](https://github.com/imagination-research/LCSC) |
+| 116 | [sCM](https://proceedings.iclr.cc/paper_files/paper/2025/file/7e9c2053258b1bdd32ff2654802cd594-Paper-Conference.pdf "Simplifying, Stabilizing & Scaling Continuous-Time Consistency Models") · 2025 | Stabilizes continuous-time consistency training with TrigFlow parameterization, tangent normalization, and adaptive weighting. | [Project page](https://openai.com/index/simplifying-stabilizing-and-scaling-continuous-time-consistency-models) |
+| 121 | [SCT](https://openreview.net/pdf?id=5RoPe2ShXx "Stable Consistency Tuning: Understanding and Improving Consistency Models") · 2025 | Improves training stability by reducing the variance of the noise estimate used to construct consistency targets. | — |
+| 123 | [AYT](https://proceedings.mlr.press/v306/kim26e.html "Align Your Trajectory Tangent: Training Better Consistency Models via Manifold-Aligned Tangents") · 2026 | Uses a learned manifold feature distance to adjust the training direction of consistency models. | [GitHub](https://github.com/1202kbs/AYT) |
+| 124 | [TD Diffusion](https://proceedings.mlr.press/v306/ying26a.html "Temporal Difference Learning for Diffusion Models") · 2026 | Bootstraps successive denoising predictions via a temporal-difference training objective. | [GitHub](https://github.com/StephenYing/Temporal_Difference_Learning_for_Diffusion_Models) |
+
+<a name="flow-maps"></a>
+
+### 2.2 Shortcut Models, MeanFlow, and Flow Maps
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 111 | [Flow Matching](https://openreview.net/forum?id=PqvMRDCJT9t "Flow Matching for Generative Modeling") · 2023 | Learns continuous-time transport by regressing conditional velocities without solving an ODE inside the training loss. | [Library](https://github.com/facebookresearch/flow_matching) |
+| 117 | [Shortcut Models](https://proceedings.iclr.cc/paper_files/paper/2025/hash/559a0998fab1d19b80e7e43a5852401c-Abstract-Conference.html "One Step Diffusion via Shortcut Models") · 2025 | Conditions on step size and trains one long update to match the composition of two short updates. | [GitHub](https://github.com/kvfrans/shortcut-models) |
+| 118 | [MeanFlow](https://proceedings.neurips.cc/paper_files/paper/2025/hash/6d13e085b79d454da5910e4ca82a3d9d-Abstract-Conference.html "Mean Flows for One-step Generative Modeling") · 2025 | Predicts interval-averaged velocity using a differential identity that relates it to instantaneous velocity. | [GitHub](https://github.com/Gsunshine/meanflow) |
+| 119 | [Improved Mean Flows](https://openaccess.thecvf.com/content/CVPR2026/html/Geng_Improved_Mean_Flows_On_the_Challenges_of_Fastforward_Generative_Models_CVPR_2026_paper.html "Improved Mean Flows: On the Challenges of Fastforward Generative Models") · 2026 | Reformulates mean-flow supervision using the model's own instantaneous velocity for more stable training. | [GitHub](https://github.com/junbao-zhou/improved-mean-flow) |
+| 120 | [Inductive Moment Matching](https://proceedings.mlr.press/v267/zhou25c.html "Inductive Moment Matching") · 2025 | Uses kernel moment matching to learn conditional distributions across times for few-step generation. | [Example code](https://github.com/edluyuan/imm) |
+| 122 | [Flow Map Matching](https://openreview.net/forum?id=cqDH0e6ak2 "Flow Map Matching with Stochastic Interpolants: A Mathematical Framework for Consistency Models") · 2025 | Uses stochastic interpolants to derive direct, Eulerian, and Lagrangian formulations for training flow maps. | [Author example](https://github.com/nmboffi/flow_map_matching_public) |
+| 125 | [Euler Mean Flows](https://proceedings.mlr.press/v306/li26fn.html "Trajectory Consistency for One-Step Generation on Euler Mean Flows") · 2026 | Uses short finite differences along trajectories to build a self-consistency objective for average velocities. | — |
+| 126 | [MeanFlow Training Curriculum](https://openaccess.thecvf.com/content/CVPR2026/html/Kim_Understanding_Accelerating_and_Improving_MeanFlow_Training_CVPR_2026_paper.html "Understanding, Accelerating, and Improving MeanFlow Training") · 2026 | Reweights mean-flow supervision by interval length and training stage. | [GitHub](https://github.com/seahl0119/ImprovedMeanFlow) |
+| 127 | [Discrete MeanFlow](https://openreview.net/pdf?id=WPcqBri0DF "Discrete MeanFlow Training Curriculum") · 2026 | Uses discretized intervals and curriculum learning to train average-velocity maps. | — |
+| 128 | [Decoupled MeanFlow](https://proceedings.iclr.cc/paper_files/paper/2026/hash/699124f548e4cb86674b20eae0fd8619-Abstract-Conference.html "Decoupled MeanFlow: Turning Flow Models into Flow Maps for Accelerated Sampling") · 2026 | Separates state encoding from target-time prediction to turn an instantaneous flow model into a finite-interval flow map. | [GitHub](https://github.com/kyungmnlee/dmf) |
+
+<a name="sampling"></a>
+
+## 3. Numerical Sampling and Parallel Inference
+
+<a name="ode-solvers"></a>
+
+### 3.1 ODE Solvers and Transition Approximations
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 24 | [DPM-Solver++](https://doi.org/10.1007/s11633-025-1562-4 "DPM-Solver++: Fast Solver for Guided Sampling of Diffusion Probabilistic Models") · 2025 | Uses a data-prediction exponential integrator for guided diffusion with single-step and multistep variants. | [GitHub](https://github.com/LuChengTHU/dpm-solver) |
+| 25 | [UniPC](https://proceedings.neurips.cc/paper_files/paper/2023/hash/9c2aa1e456ea543997f6927295196381-Abstract-Conference.html "UniPC: A Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models") · 2023 | Uses a unified predictor–corrector framework to improve solver order and reuse earlier model outputs. | [GitHub](https://github.com/wl-zhao/UniPC) |
+| 26 | [AMED](https://openaccess.thecvf.com/content/CVPR2024/html/Zhou_Fast_ODE-based_Sampling_for_Diffusion_Models_in_Around_5_Steps_CVPR_2024_paper.html "Fast ODE-based sampling for diffusion models in around 5 steps") · 2024 | Learns an intermediate timestep and direction correction to better approximate the average velocity over a sampling interval. | [GitHub](https://github.com/zju-pi/diff-sampler) |
+| 41 | [DDIM](https://openreview.net/forum?id=St1giarCHLP "Denoising Diffusion Implicit Models") · 2021 | Uses a non-Markovian process with the DDPM training objective and a deterministic sampling path that can skip steps. | [GitHub](https://github.com/ermongroup/ddim) |
+| 42 | [EDM / Heun](https://proceedings.neurips.cc/paper_files/paper/2022/file/a98846e9d9cc01cfb87eb694d946ce6b-Paper-Conference.pdf "Elucidating the design space of diffusion-based generative models") · 2022 | Separates preconditioning, noise scheduling, and sampler design, and uses a second-order Heun correction. | [GitHub](https://github.com/NVlabs/edm) |
+| 65 | [DPM-Solver](https://proceedings.neurips.cc/paper_files/paper/2022/hash/260a14acce2a89dad36adc8eefe7c59e-Abstract-Conference.html "DPM-Solver: A Fast ODE Solver for Diffusion Probabilistic Model Sampling in Around 10 Steps") · 2022 | Integrates the linear term in the diffusion ODE analytically and applies high-order exponential integration to the residual. | [GitHub](https://github.com/LuChengTHU/dpm-solver) |
+| 131 | [TADA](https://proceedings.neurips.cc/paper_files/paper/2025/hash/aa1d8cf866c4a684ef2e066dd200f8e4-Abstract-Conference.html "TADA: Improved Diffusion Sampling with Training-free Augmented DynAmics") · 2025 | Adds an augmented state and higher-order dynamics while keeping the pretrained denoiser fixed. | [GitHub](https://github.com/apple/ml-tada) |
+| 132 | [Secant Integration](https://proceedings.neurips.cc/paper_files/paper/2025/hash/c226d7bd4d9a3542a95c6a738e18463b-Abstract-Conference.html "Learning to Integrate Diffusion ODEs by Averaging the Derivatives") · 2025 | Samples teacher velocities inside each interval and learns to predict the average derivative across a sampling step. | [GitHub](https://github.com/poppuppy/secant-expectation) |
+| 133 | [LTC-Accel](https://openaccess.thecvf.com/content/ICCV2025/html/Zhu_Accelerating_Diffusion_Sampling_via_Exploiting_Local_Transition_Coherence_ICCV_2025_paper.html "Accelerating Diffusion Sampling via Exploiting Local Transition Coherence") · 2025 | Extrapolates updates using coherence between adjacent denoising intervals to skip some model evaluations. | [Project page](https://zhushangwen.github.io/LTC-accel.io) |
+| 134 | [F-DPMSolver](https://proceedings.mlr.press/v306/jiao26e.html "Are First-Order Diffusion Samplers Really Slower? A Fast Forward-Value Approach") · 2026 | Approximates a lookahead evaluation to correct first-order updates at coarse step sizes. | [GitHub](https://github.com/Na-Li66/F-DPMSolver) |
+| 135 | [GeoRK2](https://openaccess.thecvf.com/content/CVPR2026/html/Sun_GeoRK2_Geometry-Guided_Runge-Kutta_Integration_for_Diffusion_Transformer_Acceleration_CVPR_2026_paper.html "GeoRK2: Geometry-Guided Runge-Kutta Integration for Diffusion Transformer Acceleration") · 2026 | Combines geometric projection and a Runge–Kutta midpoint update to accelerate diffusion transformers. | — |
+| 138 | [Collocation Sampling Theory](https://proceedings.mlr.press/v306/gatmiry26a.html "High-accuracy and dimension-free sampling with diffusions") · 2026 | Solves diffusion trajectories with collocation and analyzes how error depends on dimension and the evaluation budget. | — |
+
+<a name="schedules"></a>
+
+### 3.2 Timestep Grids and Noise Schedules
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 129 | [Align Your Steps](https://proceedings.mlr.press/v235/sabour24a.html "Align Your Steps: Optimizing Sampling Schedules in Diffusion Models") · 2024 | Optimizes the discrete timestep grid for a given model and sampler under a fixed evaluation budget. | [Project page](https://research.nvidia.com/labs/toronto-ai/AlignYourSteps) |
+| 130 | [PCS / PCS+ft](https://proceedings.mlr.press/v306/wu26i.html "Efficient Diffusion Models via Time Step Optimization with Consistent Training and Inference Constraints") · 2026 | Searches for key sampling timesteps and optionally fine-tunes the denoiser under the same timestep constraints. | [GitHub](https://github.com/lanyangyang731/Diffusion_Probmask_Sampling) |
+| 136 | [Spectral Noise Schedules](https://proceedings.mlr.press/v306/esteves26a.html "Spectrally-Guided Diffusion Noise Schedules") · 2026 | Uses image spectra to design noise schedules around the order in which frequency bands are recovered. | — |
+| 137 | [Q-Sched](https://proceedings.mlr.press/v306/frumkin26a.html "Q-Sched: Pushing the Boundaries of Few-Step Diffusion Models with Quantization-Aware Scheduling") · 2026 | Calibrates the sampling schedule and update coefficients for a frozen quantized denoiser. | [GitHub](https://github.com/enyac-group/q-sched) |
+| 139 | [OTS](https://openaccess.thecvf.com/content/CVPR2024/html/Xue_Accelerating_Diffusion_Sampling_with_Optimized_Time_Steps_CVPR_2024_paper.html "Accelerating Diffusion Sampling with Optimized Time Steps") · 2024 | Optimizes timestep placement for a fixed solver by minimizing discretization error. | [GitHub](https://github.com/scxue/DM-NonUniform) |
+| 140 | [GITS](https://proceedings.mlr.press/v235/chen24bm.html "On the Trajectory Regularity of ODE-based Diffusion Sampling") · 2024 | Chooses timesteps using local trajectory geometry and the distribution of integration error. | — |
+
+<a name="parallel-inference"></a>
+
+### 3.3 Parallel and Streaming Systems
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 27 | [DSNO](https://proceedings.mlr.press/v202/zheng23d.html "Fast sampling of diffusion models via operator learning") · 2023 | Learns a neural operator that predicts the diffusion ODE trajectory at multiple times in one pass. | [GitHub](https://github.com/neuraloperator/DSNO) |
+| 28 | [ParaDiGMS](https://proceedings.neurips.cc/paper_files/paper/2023/hash/0d1986a61e30e5fa408c81216a616e20-Abstract-Conference.html "Parallel Sampling of Diffusion Models") · 2023 | Refines multiple tentative denoising states in parallel to shorten the sequential sampling chain. | [GitHub](https://github.com/AndyShih12/paradigms) |
+| 29 | [SRDS](https://proceedings.neurips.cc/paper_files/paper/2024/hash/09d320a5b92d74bbde3d0c4f52e680a9-Abstract-Conference.html "Self-Refining Diffusion Samplers: Enabling Parallelization via Parareal Iterations") · 2024 | Initializes with a coarse solve, then refines intervals in parallel with Parareal iterations and endpoint corrections. | [GitHub](https://github.com/nikilrselvam/srds) |
+| 142 | [StreamDiffusionV2](https://proceedings.mlsys.org/paper_files/paper/2026/hash/698cfaf72a208aef2e78bcac55b74328-Abstract-Conference.html "StreamDiffusionV2: A Streaming System for Dynamic and Interactive Video Generation") · 2026 | Combines chunk scheduling, rolling KV caches, and pipelining for interactive streaming video generation. | [GitHub](https://github.com/chenfengxu714/StreamDiffusionV2) |
+
+<a name="network-and-runtime"></a>
+
+## 4. Network Design and Per-Step Inference Cost
+
+<a name="efficient-backbones"></a>
+
+### 4.1 Efficient Backbones and Linear Attention
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 30 | [Diffusion-RWKV](https://arxiv.org/abs/2404.04478 "Diffusion-RWKV: Scaling RWKV-like architectures for diffusion models") · 2024 | Uses RWKV-style sequence mixing in the diffusion denoiser. | [GitHub](https://github.com/feizc/diffusion-rwkv) |
+| 31 | [U-DiT](https://arxiv.org/abs/2405.02730 "U-DiTs: Downsample Tokens in U-Shaped Diffusion Transformers") · 2024 | Downsamples tokens within a U-shaped diffusion transformer to reduce high-resolution attention cost. | [GitHub](https://github.com/YuchuanTian/U-DiT) |
+| 32 | [DiM](https://arxiv.org/abs/2405.14224 "DiM: Diffusion Mamba for Efficient High-Resolution Image Synthesis") · 2024 | Uses Mamba state-space layers in a high-resolution image diffusion denoiser. | [GitHub](https://github.com/tyshiwo1/DiM-DiffusionMamba) |
+| 67 | [SnapFusion](https://proceedings.neurips.cc/paper_files/paper/2023/file/41bcc9d3bddd9c90e1f44b29e26d97ff-Paper-Conference.pdf "SnapFusion: Text-to-image diffusion model on mobile devices within two seconds") · 2023 | Compresses the denoiser, reduces sampling steps, and optimizes decoding for mobile text-to-image generation. | [GitHub](https://github.com/snap-research/SnapFusion) |
+| 143 | [SANA](https://proceedings.iclr.cc/paper_files/paper/2025/hash/34345e243156da67605d4b63d71c8d98-Abstract-Conference.html "SANA: Efficient High-Resolution Text-to-Image Synthesis with Linear Diffusion Transformers") · 2025 | Combines a high-compression autoencoder, linear attention, and local mixing for high-resolution text-to-image generation. | [GitHub](https://github.com/NVlabs/Sana) |
+| 144 | [Linear Transformers](https://proceedings.mlr.press/v119/katharopoulos20a.html "Transformers are RNNs: Fast autoregressive transformers with linear attention") · 2020 | Rewrites attention with kernel features and a compact accumulated state for linear-time sequence computation. | [GitHub](https://github.com/idiap/fast-transformers) |
+| 145 | [RWKV](https://arxiv.org/abs/2305.13048 "RWKV: Reinventing RNNs for the transformer era") · 2023 | Uses weighted temporal mixing that can train in parallel and run recurrently at inference. | [GitHub](https://github.com/BlinkDL/RWKV-LM) |
+| 146 | [Mamba](https://arxiv.org/abs/2312.00752 "Mamba: Linear-time sequence modeling with selective state spaces") · 2023 | Uses input-dependent state-space updates for linear-time sequence modeling. | [GitHub](https://github.com/state-spaces/mamba) |
+| 173 | [SANA-Video](https://proceedings.iclr.cc/paper_files/paper/2026/hash/41b93c59da0d0f835907fd661d419db2-Abstract-Conference.html "SANA-Video: Efficient Video Generation with Block Linear Diffusion Transformer") · 2026 | Uses a block-linear diffusion transformer for efficient spatiotemporal mixing in video generation. | [GitHub](https://github.com/NVlabs/Sana) |
+
+<a name="sparse-attention"></a>
+
+### 4.2 Sparse Attention
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 147 | [Sparse Video-Gen](https://proceedings.mlr.press/v267/xi25c.html "Sparse Video-Gen: Accelerating Video Diffusion Transformers with Spatial-Temporal Sparsity") · 2025 | Identifies spatial or temporal sparsity patterns in video attention heads to reduce global attention cost. | [GitHub](https://github.com/svg-project/Sparse-VideoGen) |
+| 148 | [Sparse VideoGen2](https://proceedings.neurips.cc/paper_files/paper/2025/hash/8bd5148caced2d73cea7b6961a874a49-Abstract-Conference.html "Sparse VideoGen2: Accelerate Video Generation with Sparse Attention via Semantic-Aware Permutation") · 2025 | Groups and reorders semantically similar tokens to form contiguous blocks for GPU-efficient sparse attention. | [GitHub](https://github.com/svg-project/Sparse-VideoGen) |
+| 149 | [Radial Attention](https://proceedings.neurips.cc/paper_files/paper/2025/hash/18a367688479c1b08b001584218a4443-Abstract-Conference.html "Radial Attention: O(n log n) Sparse Attention with Energy Decay for Long Video Generation") · 2025 | Exploits attention energy decay with spatiotemporal distance to construct sparse attention for long video. | [GitHub](https://github.com/mit-han-lab/radial-attention) |
+| 150 | [RAPID](https://openaccess.thecvf.com/content/CVPR2026/papers/Lin_RAPID_Reusing_Attention_Sparsity_with_Inter-step_Adaptation_for_Efficient_Video_CVPR_2026_paper.pdf "RAPID: Reusing Attention Sparsity with Inter-step Adaptation for Efficient Video Diffusion") · 2026 | Reuses attention-block importance estimates across denoising steps and updates them adaptively. | — |
+
+<a name="cache-and-forecasting"></a>
+
+### 4.3 Caching and Feature Forecasting
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 33 | [DeepCache](https://openaccess.thecvf.com/content/CVPR2024/html/Ma_DeepCache_Accelerating_Diffusion_Models_for_Free_CVPR_2024_paper.html "DeepCache: Accelerating diffusion models for free") · 2024 | Reuses deep U-Net features across nearby denoising steps while refreshing the shallow path. | [GitHub](https://github.com/horseee/DeepCache) |
+| 34 | [Faster Diffusion](https://proceedings.neurips.cc/paper_files/paper/2024/file/9ad996b5c45130de2bc00b60d8607904-Paper-Conference.pdf "Faster diffusion: Rethinking the role of the encoder for diffusion model inference") · 2024 | Reuses slowly changing encoder features and schedules decoding in parallel. | [GitHub](https://github.com/hutaiHang/Faster-Diffusion) |
+| 151 | [SenCache](https://openaccess.thecvf.com/content/CVPR2026/html/Haghighi_SenCache_Accelerating_Diffusion_Model_Inference_via_Sensitivity-Aware_Caching_CVPR_2026_paper.html "SenCache: Accelerating Diffusion Model Inference via Sensitivity-Aware Caching") · 2026 | Decides when to refresh cached features using output sensitivity to latent and timestep changes. | [GitHub](https://github.com/vita-epfl/SenCache) |
+| 152 | [Learning-to-Cache](https://proceedings.neurips.cc/paper_files/paper/2024/file/f0b1515be276f6ba82b4f2b25e50bef0-Paper-Conference.pdf "Learning-to-cache: Accelerating diffusion transformer via layer caching") · 2024 | Learns which transformer layers can be skipped at each sampling step. | [GitHub](https://github.com/horseee/learning-to-cache) |
+| 153 | [FORA](https://arxiv.org/abs/2407.01425 "FORA: Fast-forward caching in diffusion transformer acceleration") · 2024 | Periodically refreshes attention and MLP outputs and reuses them on the intervening steps. | [GitHub](https://github.com/pratheba/FORA) |
+| 154 | [ToCa](https://proceedings.iclr.cc/paper_files/paper/2025/hash/bbe024e0517fe12ac3a8d388b19ff9fe-Abstract-Conference.html "Accelerating Diffusion Transformers with Token-wise Feature Caching") · 2025 | Uses token sensitivity and error propagation to choose which tokens have to be recomputed. | [GitHub](https://github.com/Shenyi-Z/ToCa) |
+| 155 | [AdaCache](https://openaccess.thecvf.com/content/ICCV2025/html/Kahatapitiya_Adaptive_Caching_for_Faster_Video_Generation_with_Diffusion_Transformers_ICCV_2025_paper.html "Adaptive Caching for Faster Video Generation with Diffusion Transformers") · 2025 | Adapts cache intervals to video motion and feature changes. | [GitHub](https://github.com/AdaCache-DiT/AdaCache) |
+| 156 | [TeaCache](https://openaccess.thecvf.com/content/CVPR2025/html/Liu_Timestep_Embedding_Tells_Its_Time_to_Cache_for_Video_Diffusion_CVPR_2025_paper.html "Timestep Embedding Tells: It's Time to Cache for Video Diffusion Model") · 2025 | Uses changes in timestep-modulated inputs to decide when to skip denoiser computation. | [GitHub](https://github.com/ali-vilab/TeaCache) |
+| 157 | [MagCache](https://proceedings.neurips.cc/paper_files/paper/2025/hash/311207bb626e36a8f1d3eb92aa67af22-Abstract-Conference.html "MagCache: Fast Video Generation with Magnitude-Aware Cache") · 2025 | Uses changes in residual magnitude to estimate reuse error and decide when to refresh the cache. | [GitHub](https://github.com/Zehong-Ma/MagCache) |
+| 158 | [BWCache](https://proceedings.iclr.cc/paper_files/paper/2026/hash/ac8ec9b4d94c03f0af8c4fe3d5fad4fd-Abstract-Conference.html "BWCache: Accelerating Video Diffusion Transformers through Block-Wise Caching") · 2026 | Makes caching decisions separately for individual transformer blocks. | [GitHub](https://github.com/hsc113/BWCache) |
+| 159 | [TaylorSeers](https://openaccess.thecvf.com/content/ICCV2025/html/Liu_From_Reusing_to_Forecasting_Accelerating_Diffusion_Models_with_TaylorSeers_ICCV_2025_paper.html "From Reusing to Forecasting: Accelerating Diffusion Models with TaylorSeers") · 2025 | Uses finite differences to estimate feature derivatives and extrapolate activations at later denoising steps. | [GitHub](https://github.com/Shenyi-Z/TaylorSeer) |
+| 160 | [ARCache](https://openaccess.thecvf.com/content/CVPR2026/html/Nan_Accelerating_Autoregressive_Video_Diffusion_via_History-Guided_Cache_and_Residual_Correction_CVPR_2026_paper.html "Accelerating Autoregressive Video Diffusion via History-Guided Cache and Residual Correction") · 2026 | Uses autoregressive video history to guide feature reuse and applies residual corrections to limit accumulated error. | — |
+
+<a name="compression-and-kernels"></a>
+
+### 4.4 Quantization, Pruning, and Kernels
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 35 | [1.58-bit FLUX](https://arxiv.org/abs/2412.18653 "1.58-bit FLUX") · 2024 | Constrains FLUX weights to ternary values to reduce storage and memory traffic. | [GitHub](https://github.com/Chenglin-Yang/1.58bit.flux) |
+| 36 | [LD-Pruner](https://doi.org/10.1109/cvprw63382.2024.00087 "LD-Pruner: Efficient pruning of latent diffusion models using task-agnostic insights") · 2024 | Uses changes in latent feature statistics to score operations for structured pruning. | — |
+| 37 | [Q-Diffusion](https://openaccess.thecvf.com/content/ICCV2023/html/Li_Q-Diffusion_Quantizing_Diffusion_Models_ICCV_2023_paper.html "Q-Diffusion: Quantizing Diffusion Models") · 2023 | Calibrates post-training quantization across diffusion timesteps to account for changing activation distributions. | [GitHub](https://github.com/Xiuyu-Li/q-diffusion) |
+| 161 | [VDMini](https://arxiv.org/abs/2411.18375 "Individual Content and Motion Dynamics Preserved Pruning for Video Diffusion Models") · 2024 | Prunes redundant video diffusion blocks while preserving motion capacity and uses adversarial training to recover quality. | — |
+| 162 | [SVDQuant](https://proceedings.iclr.cc/paper_files/paper/2025/hash/f34f0630c33be15b8c89426bb8056798-Abstract-Conference.html "SVDQuant: Absorbing Outliers by Low-Rank Component for 4-Bit Diffusion Models") · 2025 | Routes large activation and weight values through a high-precision low-rank branch and quantizes the remaining computation to four bits. | [GitHub](https://github.com/nunchux-ai/nunchaku) |
+| 163 | [SageAttention2](https://proceedings.mlr.press/v267/zhang25ae.html "SageAttention2: Efficient Attention with Thorough Outlier Smoothing and Per-thread INT4 Quantization") · 2025 | Uses low-bit attention matrix products with smoothing and per-thread quantization to control error. | [GitHub](https://github.com/thu-ml/SageAttention) |
+| 174 | [EfficientDM](https://arxiv.org/abs/2310.03270 "EfficientDM: Efficient Quantization-Aware Fine-Tuning of Low-Bit Diffusion Models") · 2024 | Uses efficient quantization-aware fine-tuning and distillation to recover quality in low-bit diffusion models. | [GitHub](https://github.com/ThisisBillhe/EfficientDM) |
+
+<a name="foundations-and-evaluation"></a>
+
+## 5. Foundations, Applications, and Evaluation
+
+<a name="foundations"></a>
+
+### 5.1 Diffusion, Adversarial Learning, and Transport
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 40 | [DDPM](https://proceedings.neurips.cc/paper_files/paper/2020/file/4c5bcfec8584af0d967f1ab10179ca4b-Paper.pdf "Denoising diffusion probabilistic models") · 2020 | Generates samples through a learned reverse Markov chain paired with a forward Gaussian noising process. | [GitHub](https://github.com/hojonathanho/diffusion) |
+| 43 | [ADM](https://proceedings.neurips.cc/paper_files/paper/2021/file/49ad23d1ec9fa4bd8d77d02681df5cfa-Paper.pdf "Diffusion models beat GANs on image synthesis") · 2021 | Improves the denoising architecture and uses classifier guidance for class-conditional image synthesis. | [GitHub](https://github.com/openai/guided-diffusion) |
+| 44 | [Improved DDPM](https://proceedings.mlr.press/v139/nichol21a.html "Improved denoising diffusion probabilistic models") · 2021 | Learns reverse-process variances and improves the noise schedule to maintain quality with fewer evaluations. | [GitHub](https://github.com/openai/improved-diffusion) |
+| 45 | [DiT](https://openaccess.thecvf.com/content/ICCV2023/html/Peebles_Scalable_Diffusion_Models_with_Transformers_ICCV_2023_paper.html "Scalable diffusion models with transformers") · 2023 | Uses a transformer in place of a latent diffusion U-Net and studies model and compute scaling. | [GitHub](https://github.com/facebookresearch/DiT) |
+| 46 | [GAN](https://doi.org/10.1145/3422622 "Generative adversarial networks") · 2020 | Learns a data distribution by training a generator against a discriminator. | [GitHub](https://github.com/goodfeli/adversarial) |
+| 47 | [GAN Overview](https://doi.org/10.1109/msp.2017.2765202 "Generative adversarial networks: An overview") · 2018 | Reviews GAN training, architectures, stability, and applications. | — |
+| 48 | [LSGAN](https://openaccess.thecvf.com/content_iccv_2017/html/Mao_Least_Squares_Generative_ICCV_2017_paper.html "Least squares generative adversarial networks") · 2017 | Uses a least-squares discrimination objective to improve adversarial training gradients. | — |
+| 73 | [Score SDE](https://openreview.net/forum?id=PxTIG12RRHS "Score-Based Generative Modeling through Stochastic Differential Equations") · 2021 | Unifies score-based generation through continuous-time SDEs and derives the corresponding probability-flow ODE. | [GitHub](https://github.com/yang-song/score_sde) |
+| 74 | [Optimal Transport](https://link.springer.com/book/10.1007/978-3-540-71050-9 "Optimal Transport: Old and New") · 2009 | Presents optimal transport theory and applications, providing background for transport maps and couplings. | — |
+| 77 | [Diffusion-GAN](https://arxiv.org/abs/2206.02262 "Diffusion-GAN: Training GANs with diffusion") · 2022 | Adds diffusion perturbations to adversarial training so the discriminator sees real and generated samples across noise levels. | [GitHub](https://github.com/Zhendong-Wang/Diffusion-GAN) |
+| 99 | [Classifier-Free Guidance](https://arxiv.org/abs/2207.12598 "Classifier-free diffusion guidance") · 2022 | Combines conditional and unconditional predictions to control generation fidelity and diversity. | — |
+| 103 | [Latent Diffusion](https://openaccess.thecvf.com/content/CVPR2022/html/Rombach_High-Resolution_Image_Synthesis_With_Latent_Diffusion_Models_CVPR_2022_paper.html "High-resolution image synthesis with latent diffusion models") · 2022 | Moves diffusion into a learned latent space to reduce computational cost. | [GitHub](https://github.com/CompVis/latent-diffusion) |
+| 112 | [Generative Particle Models](https://proceedings.neurips.cc/paper_files/paper/2023/file/bbc461518c59a2a8d64e70e2c38c4a0e-Paper-Conference.pdf "Unifying GANs and score-based diffusion as generative particle models") · 2023 | Connects GANs and score-based diffusion through particle dynamics and vector fields. | — |
+| 141 | [Mean Shift / Density Gradient](https://doi.org/10.1109/tit.1975.1055330 "The estimation of the gradient of a density function, with applications in pattern recognition") · 1975 | Uses kernels to estimate density gradients, providing tools for local trajectory analysis and mean shift. | — |
+
+<a name="applications-and-models"></a>
+
+### 5.2 Representative Models and Applications
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 49 | [FLUX.1](https://bfl.ai/blog/24-08-01-bfl "Announcing Black Forest Labs") · 2024 | Documents the FLUX release, which provides a reference point for high-resolution synthesis and later acceleration methods. | [GitHub](https://github.com/black-forest-labs/flux) |
+| 50 | [SD3 / MMDiT](https://proceedings.mlr.press/v235/esser24a.html "Scaling rectified flow transformers for high-resolution image synthesis") · 2024 | Scales rectified-flow transformers and uses joint text–image attention for conditioned image synthesis. | [GitHub](https://github.com/Stability-AI/sd3-ref) |
+| 52 | [Lumina-T2X](https://arxiv.org/abs/2405.05945 "Lumina-T2X: Transforming Text into Any Modality, Resolution, and Duration via Flow-based Large Diffusion Transformers") · 2024 | Uses flow-based diffusion transformers to generate multiple modalities at different resolutions. | [GitHub](https://github.com/Alpha-VLLM/Lumina-T2X) |
+| 53 | [ResShift](https://proceedings.neurips.cc/paper_files/paper/2023/file/2ac2eac5098dba08208807b65c5851cc-Paper-Conference.pdf "ResShift: Efficient diffusion model for image super-resolution by residual shifting") · 2023 | Defines a residual-shifting process between low- and high-resolution images to reduce super-resolution denoising steps. | [GitHub](https://github.com/zsyOAOA/ResShift) |
+| 54 | [SUPIR](https://openaccess.thecvf.com/content/CVPR2024/html/Yu_Scaling_Up_to_Excellence_Practicing_Model_Scaling_for_Photo-Realistic_Image_CVPR_2024_paper.html "Scaling up to excellence: Practicing model scaling for photo-realistic image restoration in the wild") · 2024 | Scales a generative-prior model and its training data for real-world image restoration. | [GitHub](https://github.com/Fanghua-Yu/SUPIR) |
+| 55 | [Video LDM](https://openaccess.thecvf.com/content/CVPR2023/html/Blattmann_Align_Your_Latents_High-Resolution_Video_Synthesis_With_Latent_Diffusion_Models_CVPR_2023_paper.html "Align your latents: High-resolution video synthesis with latent diffusion models") · 2023 | Adds temporal modules to a pretrained image latent diffusion model for high-resolution video generation. | [Project page](https://research.nvidia.com/labs/toronto-ai/VideoLDM) |
+| 56 | [I2VGen-XL](https://arxiv.org/abs/2311.04145 "I2VGen-XL: High-quality image-to-video synthesis via cascaded diffusion models") · 2023 | Uses cascaded diffusion to preserve the conditioning image's content and refine the generated video. | [GitHub](https://github.com/ali-vilab/VGen) |
+| 57 | [CogVideoX](https://proceedings.iclr.cc/paper_files/paper/2025/hash/ce31378e9f41d8907e97dab172b6c559-Abstract-Conference.html "CogVideoX: Text-to-Video Diffusion Models with an Expert Transformer") · 2025 | Uses an expert transformer for text tokens and video latents in text-to-video generation. | [GitHub](https://github.com/zai-org/CogVideo) |
+| 58 | [Diffusion-LM](https://proceedings.neurips.cc/paper_files/paper/2022/file/1be5bc25d50895ee656b8c2d9eb89d6a-Paper-Conference.pdf "Diffusion-LM improves controllable text generation") · 2022 | Runs diffusion in a continuous token embedding space and uses gradient guidance for controllable text generation. | [GitHub](https://github.com/XiangLi1999/Diffusion-LM) |
+| 60 | [DiffWave](https://arxiv.org/abs/2009.09761 "DiffWave: A versatile diffusion model for audio synthesis") · 2020 | Generates audio waveforms with diffusion and can serve as a neural vocoder. | [GitHub](https://github.com/lmnt-com/diffwave) |
+| 61 | [AudioLDM](https://arxiv.org/abs/2301.12503 "AudioLDM: Text-to-audio generation with latent diffusion models") · 2023 | Synthesizes text-conditioned sound in a learned audio latent space. | [GitHub](https://github.com/haoheliu/AudioLDM) |
+| 62 | [Medical Anomaly Detection](https://doi.org/10.1007/978-3-031-16452-1_4 "Diffusion models for medical anomaly detection") · 2022 | Uses diffusion reconstruction as a reference for normal appearance to localize anomalies in medical images. | — |
+| 63 | [Computational Biology Review](https://www.nature.com/articles/s44222-023-00114-9 "Diffusion models in bioinformatics and computational biology") · 2024 | Reviews diffusion-model applications in bioinformatics and computational biology. | — |
+| 64 | [AlphaFold 3](https://www.nature.com/articles/s41586-024-07487-w "Accurate structure prediction of biomolecular interactions with AlphaFold 3") · 2024 | Uses a diffusion module for biomolecular complex structure prediction. | [GitHub](https://github.com/google-deepmind/alphafold3) |
+| 75 | [DreamFusion](https://arxiv.org/abs/2209.14988 "DreamFusion: Text-to-3D using 2D diffusion") · 2022 | Uses score distillation from a pretrained 2D diffusion model to optimize a text-conditioned 3D representation. | [Project page](https://dreamfusion3d.github.io) |
+| 110 | [AnimateDiff](https://arxiv.org/abs/2307.04725 "AnimateDiff: Animate your personalized text-to-image diffusion models without specific tuning") · 2023 | Adds a transferable motion module to existing text-to-image models for personalized video generation. | [GitHub](https://github.com/guoyww/AnimateDiff) |
+
+<a name="metrics-and-benchmarks"></a>
+
+### 5.3 Benchmarks, Metrics, and Deployment Costs
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 66 | [Power Hungry Processing](https://doi.org/10.1145/3630106.3658542 "Power Hungry Processing: Watts Driving the Cost of AI Deployment?") · 2024 | Compares inference energy use across generative and discriminative tasks. | — |
+| 164 | [FID / TTUR](https://proceedings.neurips.cc/paper/2017/hash/8a1d694707eb0fefe65871369074926d-Abstract.html "GANs Trained by a Two Time-Scale Update Rule Converge to a Local Nash Equilibrium") · 2017 | Introduces FID using Gaussian statistics of Inception features and analyzes two-time-scale adversarial training. | [GitHub](https://github.com/bioinf-jku/TTUR) |
+| 165 | [sFID](https://proceedings.mlr.press/v139/nash21a.html "Generating Images with Sparse Representations") · 2021 | Uses spatial feature statistics to complement global FID with a measure sensitive to local image structure. | — |
+| 166 | [Inception Score](https://proceedings.neurips.cc/paper/2016/file/8a3363abe792db2d8761d6403605aeb7-Paper.pdf "Improved Techniques for Training GANs") · 2016 | Evaluates generated images through within-sample classifier confidence and diversity across samples. | [GitHub](https://github.com/openai/improved-gan) |
+| 167 | [CLIP](https://proceedings.mlr.press/v139/radford21a.html "Learning Transferable Visual Models From Natural Language Supervision") · 2021 | Learns shared visual and textual representations through contrastive pretraining, providing a basis for text–image alignment metrics. | [GitHub](https://github.com/openai/CLIP) |
+| 168 | [OpenCLIP Scaling](https://openaccess.thecvf.com/content/CVPR2023/papers/Cherti_Reproducible_Scaling_Laws_for_Contrastive_Language-Image_Learning_CVPR_2023_paper.pdf "Reproducible Scaling Laws for Contrastive Language-Image Learning") · 2023 | Studies reproducible scaling laws for contrastive text–image models used in CLIP-based evaluation. | [GitHub](https://github.com/mlfoundations/open_clip) |
+| 169 | [LPIPS](https://openaccess.thecvf.com/content_cvpr_2018/html/Zhang_The_Unreasonable_Effectiveness_CVPR_2018_paper.html "The Unreasonable Effectiveness of Deep Features as a Perceptual Metric") · 2018 | Measures perceptual image similarity with deep feature distances. | [GitHub](https://github.com/richzhang/PerceptualSimilarity) |
+| 170 | [SSIM](https://www.ece.uwaterloo.ca/~z70wang/publications/ssim.html "Image Quality Assessment: From Error Visibility to Structural Similarity") · 2004 | Compares images by luminance, contrast, and structure. | — |
+| 171 | [VBench](https://openaccess.thecvf.com/content/CVPR2024/html/Huang_VBench_Comprehensive_Benchmark_Suite_for_Video_Generative_Models_CVPR_2024_paper.html "VBench: Comprehensive benchmark suite for video generative models") · 2024 | Evaluates generated videos across visual quality, temporal behavior, semantics, and text alignment. | [GitHub](https://github.com/Vchitect/VBench) |
+| 172 | [VBench++](https://doi.org/10.1109/TPAMI.2025.3633890 "VBench++: Comprehensive and Versatile Benchmark Suite for Video Generative Models") · 2026 | Extends video generation evaluation to more settings and dimensions, with associated benchmark protocols. | [GitHub](https://github.com/Vchitect/VBench) |
+| 178 | [DINOv2](https://arxiv.org/abs/2304.07193 "DINOv2: Learning robust visual features without supervision") · 2023 | Learns general-purpose visual features through self-supervision for semantic training signals and feature-based evaluation. | [GitHub](https://github.com/facebookresearch/dinov2) |
+
+<a name="reviews-and-context"></a>
+
+### 5.4 Related Surveys and Context
+
+| Ref. | Work · Year | Main idea | Resources |
+| ---: | --- | --- | --- |
+| 38 | [Diffusion Models in Vision](https://doi.org/10.1109/tpami.2023.3261988 "Diffusion models in vision: A survey") · 2023 | Surveys diffusion-model principles and applications by computer vision task. | — |
+| 39 | [Diffusion Methods and Applications](https://doi.org/10.1145/3626235 "Diffusion models: A comprehensive survey of methods and applications") · 2024 | Reviews diffusion formulations, computational improvements, and applications. | — |
+| 59 | [Non-Autoregressive Text Diffusion Survey](https://arxiv.org/abs/2303.06574 "Diffusion models for non-autoregressive text generation: A survey") · 2023 | Surveys non-autoregressive diffusion architectures, training, and sampling for text. | — |
+| 68 | [Diffusion Distillation Survey](https://arxiv.org/abs/2304.04262 "A comprehensive survey on knowledge distillation of diffusion models") · 2023 | Reviews diffusion distillation objectives, core methods, and generative applications. | — |
+| 69 | [Efficient Diffusion Models Survey](https://doi.org/10.1109/TPAMI.2025.3569700 "Efficient Diffusion Models: A Comprehensive Survey From Principles to Practices") · 2025 | Surveys methods for improving diffusion training and inference efficiency. | — |
+| 70 | [Efficient Video Diffusion Survey](https://arxiv.org/abs/2604.15911 "Efficient Video Diffusion Models: Advancements and Challenges") · 2026 | Reviews efficient video diffusion architectures, samplers, and deployment challenges. | — |
