@@ -12,7 +12,7 @@ Conference entries use the event year. Workshops, Findings, journals, and prepri
 
 [CSV index](papers.csv) · [BibTeX](references.bib)
 
-**New paper link** · [arXiv:2611.34056](https://arxiv.org/abs/2611.34056)
+**New paper link** · [arXiv:2611.34056](https://arxiv.org/abs/2611.34056) <sup>🔥 HOT</sup>
 
 ## Contents
 
