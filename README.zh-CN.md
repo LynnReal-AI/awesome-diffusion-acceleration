@@ -12,6 +12,8 @@
 
 [CSV 索引](papers.csv) · [BibTeX](references.bib)
 
+**新增论文链接** · [arXiv:2611.34056](https://arxiv.org/abs/2611.34056)
+
 ## 分类导航
 
 | 方向 | 条目 | 子方向 |
