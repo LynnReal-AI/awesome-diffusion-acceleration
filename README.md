@@ -1,6 +1,6 @@
 # Awesome Diffusion Acceleration
 
-**English** · [简体中文](README.zh-CN.md)
+**English** · [简体中文](README.zh-CN.md) | **New paper link** · [arXiv:2611.34056](https://arxiv.org/abs/2611.34056) <sup>🔥 HOT</sup>
 
 Papers and implementations for faster diffusion and flow-based generation.
 
@@ -12,7 +12,6 @@ Conference entries use the event year. Workshops, Findings, journals, and prepri
 
 [CSV index](papers.csv) · [BibTeX](references.bib)
 
-**New paper link** · [arXiv:2611.34056](https://arxiv.org/abs/2611.34056) <sup>🔥 HOT</sup>
 
 ## Contents
 
